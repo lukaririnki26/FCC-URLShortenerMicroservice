@@ -33,16 +33,19 @@ app.post('/api/shorturl', (req, res) => {
       return res.json({ error: 'invalid url' });
     }
 
-    if (parsedUrl.hostname === req.hostname) {
-      return res.json({ error: 'invalid url' });
-    }
+    // Verify hostname with DNS lookup
+    dns.lookup(parsedUrl.hostname, (err) => {
+      if (err) {
+        return res.json({ error: 'invalid url' });
+      }
 
-    const shortUrl = shortUrlCounter++;
-    urlDatabase[shortUrl] = originalUrl;
+      const shortUrl = shortUrlCounter++;
+      urlDatabase[shortUrl.toString()] = originalUrl;
 
-    res.json({
-      original_url: originalUrl,
-      short_url: shortUrl
+      res.json({
+        original_url: originalUrl,
+        short_url: shortUrl
+      });
     });
 
   } catch {
@@ -58,7 +61,7 @@ app.get('/api/shorturl/:short_url', (req, res) => {
     return res.json({ error: 'Short URL not found' });
   }
 
-  res.status(302).set('Location', originalUrl).end();
+  res.redirect(originalUrl);
 });
 
 app.listen(port, function() {
