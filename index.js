@@ -21,46 +21,44 @@ app.get('/', function(req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// POST endpoint to create short URL
-app.post('/api/shorturl', function(req, res) {
+// POST create short URL
+app.post('/api/shorturl', (req, res) => {
   const originalUrl = req.body.url;
 
   try {
     const parsedUrl = new URL(originalUrl);
 
-    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+    // only allow http / https
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
       return res.json({ error: 'invalid url' });
     }
 
-    dns.lookup(parsedUrl.hostname.toLowerCase(), (err) => {
-      if (err) {
-        return res.json({ error: 'invalid url' });
-      }
+    if (parsedUrl.hostname === req.hostname) {
+      return res.json({ error: 'invalid url' });
+    }
 
-      const shortUrl = shortUrlCounter++;
-      urlDatabase[shortUrl.toString()] = originalUrl;
+    const shortUrl = shortUrlCounter++;
+    urlDatabase[shortUrl] = originalUrl;
 
-      res.json({
-        original_url: originalUrl,
-        short_url: shortUrl
-      });
+    res.json({
+      original_url: originalUrl,
+      short_url: shortUrl
     });
 
-  } catch (err) {
-    return res.json({ error: 'invalid url' });
+  } catch {
+    res.json({ error: 'invalid url' });
   }
 });
 
-// GET endpoint to redirect to original URL
-app.get('/api/shorturl/:short_url', function(req, res) {
-  const shortUrl = req.params.short_url;
-  const originalUrl = urlDatabase[shortUrl];
+// GET redirect
+app.get('/api/shorturl/:short_url', (req, res) => {
+  const originalUrl = urlDatabase[req.params.short_url];
 
   if (!originalUrl) {
     return res.json({ error: 'Short URL not found' });
   }
 
-  res.redirect(originalUrl);
+  res.status(302).set('Location', originalUrl).end();
 });
 
 app.listen(port, function() {
