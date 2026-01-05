@@ -15,7 +15,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/public', express.static(`${process.cwd()}/public`));
 
 // Load or initialize database
-const dbFile = '/tmp/urls.json';
+const dbFile = `${process.cwd()}/urls.json`;
 let urlDatabase = {};
 let shortUrlCounter = 1;
 
