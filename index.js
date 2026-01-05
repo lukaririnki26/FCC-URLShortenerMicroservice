@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const dns = require('dns');
 const app = express();
 
 // Basic Configuration
@@ -31,13 +32,13 @@ app.post('/api/shorturl', function(req, res) {
       return res.json({ error: 'invalid url' });
     }
 
-    dns.lookup(parsedUrl.hostname, (err) => {
+    dns.lookup(parsedUrl.hostname.toLowerCase(), (err) => {
       if (err) {
         return res.json({ error: 'invalid url' });
       }
 
       const shortUrl = shortUrlCounter++;
-      urlDatabase[shortUrl] = originalUrl;
+      urlDatabase[shortUrl.toString()] = originalUrl;
 
       res.json({
         original_url: originalUrl,
