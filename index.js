@@ -2,8 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const dns = require('dns');
-const url = require('url');
+const fs = require('fs');
 const app = express();
 
 // Basic Configuration
@@ -14,9 +13,32 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use('/public', express.static(`${process.cwd()}/public`));
 
-// In-memory storage for URLs
+// Load or initialize database
+const dbFile = '/tmp/urls.json';
 let urlDatabase = {};
 let shortUrlCounter = 1;
+
+try {
+  if (fs.existsSync(dbFile)) {
+    const data = JSON.parse(fs.readFileSync(dbFile, 'utf8'));
+    urlDatabase = data.urls;
+    shortUrlCounter = data.counter;
+  }
+} catch (err) {
+  console.log('Starting with fresh database');
+}
+
+// Save database to file
+function saveDatabase() {
+  try {
+    fs.writeFileSync(dbFile, JSON.stringify({
+      urls: urlDatabase,
+      counter: shortUrlCounter
+    }));
+  } catch (err) {
+    console.error('Error saving database:', err);
+  }
+}
 
 app.get('/', function(req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
@@ -38,6 +60,7 @@ app.post('/api/shorturl', function(req, res) {
     // Create short URL
     const shortUrl = shortUrlCounter++;
     urlDatabase[shortUrl] = originalUrl;
+    saveDatabase();
 
     res.json({
       original_url: originalUrl,
