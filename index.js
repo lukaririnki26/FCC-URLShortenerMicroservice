@@ -24,25 +24,29 @@ app.get('/', function(req, res) {
 app.post('/api/shorturl', function(req, res) {
   const originalUrl = req.body.url;
 
-  // Validate URL format
   try {
     const parsedUrl = new URL(originalUrl);
-    
-    // Check if it's http or https
+
     if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
       return res.json({ error: 'invalid url' });
     }
 
-    // Create short URL
-    const shortUrl = shortUrlCounter++;
-    urlDatabase[shortUrl.toString()] = originalUrl;
+    dns.lookup(parsedUrl.hostname, (err) => {
+      if (err) {
+        return res.json({ error: 'invalid url' });
+      }
 
-    res.json({
-      original_url: originalUrl,
-      short_url: shortUrl
+      const shortUrl = shortUrlCounter++;
+      urlDatabase[shortUrl] = originalUrl;
+
+      res.json({
+        original_url: originalUrl,
+        short_url: shortUrl
+      });
     });
+
   } catch (err) {
-    res.json({ error: 'invalid url' });
+    return res.json({ error: 'invalid url' });
   }
 });
 
